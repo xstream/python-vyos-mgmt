@@ -286,8 +286,8 @@ class Router(object):
             output = self.__execute_command("{0} {1}". format("set", path))
             if re.search(r"Set\s+failed", output):
                 raise ConfigError(output)
-            elif re.search(r"already exists", output):
-                raise ConfigError("Configuration path already exists")
+            # elif re.search(r"already exists", output):
+            #     raise ConfigError("Configuration path already exists")
             self.__session_modified = True
 
     def delete(self, path):
@@ -303,6 +303,20 @@ class Router(object):
             raise ConfigError("Cannot execute delete commands when not in configuration mode")
         else:
             output = self.__execute_command("{0} {1}". format("delete", path))
-            if re.search(r"Nothing\s+to\s+delete", output):
-                raise ConfigError(output)
+            # if re.search(r"Nothing\s+to\s+delete", output):
+            #     raise ConfigError(output)
             self.__session_modified = True
+
+    def show(self, path):
+        """ Show a node from configuration on the router
+
+        You must call the configure() method before using this one.
+
+        :param path: Configuration node path.
+        :raises: ConfigError
+        """
+        if not self.__conf_mode:
+            raise ConfigError("Cannot execute show commands when not in configuration mode")
+        else:
+            output = self.__execute_command("{0} {1}". format("show", path))
+            return output
