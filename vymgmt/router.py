@@ -319,4 +319,6 @@ class Router(object):
             raise ConfigError("Cannot execute show commands when not in configuration mode")
         else:
             output = self.__execute_command("{0} {1}". format("show", path))
+            output = re.sub("^show %s$" % (path), "", output)
+            output = re.sub("^[edit].*", "", output)
             return output
