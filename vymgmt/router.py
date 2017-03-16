@@ -332,7 +332,6 @@ class Router(object):
             def parse(lst, index):
                 d = {}
                 while (index < len(lst)):
-                    print index, "|" + lst[index] + "|"
                     if (lst[index].endswith("{")):
                         key = lst[index][:-1].strip()
                         value, index = parse(lst, index + 1)
