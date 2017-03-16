@@ -81,6 +81,8 @@ class Router(object):
         # String codec, hardcoded for now
         self.__codec = "utf8"
 
+        self.silent = False
+
     def __execute_command(self, command):
         """ Executed a command on the router
 
@@ -286,8 +288,8 @@ class Router(object):
             output = self.__execute_command("{0} {1}". format("set", path))
             if re.search(r"Set\s+failed", output):
                 raise ConfigError(output)
-            # elif re.search(r"already exists", output):
-            #     raise ConfigError("Configuration path already exists")
+            elif re.search(r"already exists", output) and not self.silent:
+                raise ConfigError("Configuration path already exists")
             self.__session_modified = True
 
     def delete(self, path):
@@ -303,8 +305,8 @@ class Router(object):
             raise ConfigError("Cannot execute delete commands when not in configuration mode")
         else:
             output = self.__execute_command("{0} {1}". format("delete", path))
-            # if re.search(r"Nothing\s+to\s+delete", output):
-            #     raise ConfigError(output)
+            if re.search(r"Nothing\s+to\s+delete", output) and not self.silent:
+                raise ConfigError(output)
             self.__session_modified = True
 
     def show(self, path):
@@ -318,7 +320,30 @@ class Router(object):
         if not self.__conf_mode:
             raise ConfigError("Cannot execute show commands when not in configuration mode")
         else:
-            output = self.__execute_command("{0} {1}". format("show", path))
-            output = re.sub("^show %s$" % (path), "", output)
-            output = re.sub("^[edit].*", "", output)
-            return output
+            cmd = "{0} {1}". format("show", path)
+            output = self.__execute_command(cmd)
+            
+            p1 = output.find(cmd)
+            p1 = p1 + len(cmd) if p1 != -1 else 0
+            p2 = output.find("[edit]")
+            p2 = p2 if p2 != -1 else len(output)
+            output = output[p1:p2].strip()
+
+            def parse(lst, index):
+                d = {}
+                while (index < len(lst)):
+                    print index, "|" + lst[index] + "|"
+                    if (lst[index].endswith("{")):
+                        key = lst[index][:-1].strip()
+                        value, index = parse(lst, index + 1)
+                        d[key] = value
+                    elif (lst[index] == "}"):
+                        return d, index + 1
+                    else:
+                        key, value = (lst[index] + ' ').split(' ', 1)
+                        d[key] = value.strip().strip('"')
+                        index += 1
+                return d, index
+            
+            value, index = parse(map(str.strip, output.split('\n')), 0)
+            return value
