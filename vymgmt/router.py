@@ -323,26 +323,27 @@ class Router(object):
             cmd = "{0} {1}". format("show", path)
             output = self.__execute_command(cmd)
             
-            p1 = output.find(cmd)
-            p1 = p1 + len(cmd) if p1 != -1 else 0
-            p2 = output.find("[edit]")
-            p2 = p2 if p2 != -1 else len(output)
-            output = output[p1:p2].strip()
+            cut_to = output.find(cmd)
+            cut_to = cut_to + len(cmd) if cut_to != -1 else 0
+            cut_from = output.find("[edit]")
+            cut_from = cut_from if cut_from != -1 else len(output)
+            output = output[cut_to:cut_from].strip()
 
             def parse(lst, index):
                 d = {}
                 while (index < len(lst)):
-                    if (lst[index].endswith("{")):
-                        key = lst[index][:-1].strip()
+                    line = lst[index].strip()
+                    if (line.endswith("{")):
+                        key = line[:-1].strip()
                         value, index = parse(lst, index + 1)
                         d[key] = value
-                    elif (lst[index] == "}"):
+                    elif (line == "}"):
                         return d, index + 1
                     else:
-                        key, value = (lst[index] + ' ').split(' ', 1)
+                        key, value = (line + ' ').split(' ', 1)
                         d[key] = value.strip().strip('"')
                         index += 1
                 return d, index
             
-            value, index = parse(map(str.strip, output.split('\n')), 0)
+            value, index = parse(output.split('\n'), 0)
             return value
